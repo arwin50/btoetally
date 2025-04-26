@@ -54,16 +54,12 @@ def login_view(request):
 @api_view(["POST"])
 def logout_view(request):
     try:
-        # Get refresh token from request data instead of cookies
         refresh_token = request.data.get("refresh")
         if refresh_token:
             token = RefreshToken(refresh_token)
-            token.blacklist()  # Blacklist the refresh token
-
-        # If user is authenticated, blacklist their tokens
+            token.blacklist()
         if hasattr(request, 'user') and request.user.is_authenticated:
             OutstandingToken.objects.filter(user=request.user).delete()
-
     except Exception as e:
         return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
 
