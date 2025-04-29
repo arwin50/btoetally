@@ -110,15 +110,15 @@ def getTransaction(request, id):
 @csrf_exempt
 def transactionList(request):
     if request.method == 'GET':
-        type_filter = request.GET.get('type')
-        category_filter = request.GET.get('category')
+        type_filter = request.GET.get('type', 'All')
+        category_filter = request.GET.get('category', 'All')
 
         transactions = Transaction.objects.all()
 
-        if type_filter and type_filter != "All":
+        if type_filter != "All":
             transactions = transactions.filter(type=type_filter)
 
-        if category_filter and category_filter != "All":
+        if category_filter != "All":
             transactions = transactions.filter(category=category_filter)
 
         transactions_list = list(transactions.values(
