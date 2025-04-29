@@ -59,15 +59,15 @@ def getTransaction(request, id):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def transactionList(request):
-    type_filter = request.GET.get('type')
-    category_filter = request.GET.get('category')
+    type_filter = request.GET.get('type','All')
+    category_filter = request.GET.get('category','All')
 
     transactions = Transaction.objects.filter(user=request.user)
 
-    if type_filter and type_filter != "All":
+    if type_filter != "All":
         transactions = transactions.filter(type=type_filter)
 
-    if category_filter and category_filter != "All":
+    if category_filter != "All":
         transactions = transactions.filter(category=category_filter)
 
     serializer = TransactionSerializer(transactions, many=True)
