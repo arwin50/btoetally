@@ -110,10 +110,21 @@ def getTransaction(request, id):
 @csrf_exempt
 def transactionList(request):
     if request.method == 'GET':
-        transactions = Transaction.objects.all().values(
+        type_filter = request.GET.get('type')
+        category_filter = request.GET.get('category')
+
+        transactions = Transaction.objects.all()
+
+        if type_filter and type_filter != "All":
+            transactions = transactions.filter(type=type_filter)
+
+        if category_filter and category_filter != "All":
+            transactions = transactions.filter(category=category_filter)
+
+        transactions_list = list(transactions.values(
             'id', 'user', 'type', 'subject', 'amount', 'date', 'category', 'notes', 'created_at'
-        )
-        transactions_list = list(transactions)
+        ))
+
         return JsonResponse(transactions_list, safe=False, status=200)
 
     return JsonResponse({'error': 'GET request required'}, status=405)
