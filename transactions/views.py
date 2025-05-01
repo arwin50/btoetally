@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
+from datetime import datetime
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status, permissions
@@ -61,6 +62,7 @@ def getTransaction(request, id):
 def transactionList(request):
     type_filter = request.GET.get('type','All')
     category_filter = request.GET.get('category','All')
+    month_filter = request.GET.get('month', 'All')
 
     transactions = Transaction.objects.filter(user=request.user)
 
@@ -69,6 +71,11 @@ def transactionList(request):
 
     if category_filter != "All":
         transactions = transactions.filter(category=category_filter)
+    
+    if month_filter == 'Current':
+        current_month = datetime.now().month
+        transactions = transactions.filter(date__month=current_month)
+    
 
     serializer = TransactionSerializer(transactions, many=True)
     return Response(serializer.data)
