@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.auth.models import User
 
 from toetally import settings 
 
@@ -29,3 +28,16 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.subject} ({self.type})"
+    
+
+class MonthlyBudget(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    month = models.DateField() 
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        unique_together = ('user', 'month')
+        ordering = ['-month']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.month.strftime('%B %Y')}: PHP {self.amount}"

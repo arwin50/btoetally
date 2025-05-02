@@ -1,13 +1,10 @@
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-
 from datetime import datetime
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from .models import Transaction
-from .serializers import TransactionSerializer
-
+from .models import MonthlyBudget, Transaction
+from .serializers import MonthlyBudgetSerializer, TransactionSerializer
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
@@ -79,3 +76,43 @@ def transactionList(request):
 
     serializer = TransactionSerializer(transactions, many=True)
     return Response(serializer.data)
+
+# views.py (continued)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def getBudget(request):
+    current_month = datetime.now().strftime('%Y-%m-01') 
+    try:
+        budget = MonthlyBudget.objects.get(user=request.user, month=current_month)
+    except MonthlyBudget.DoesNotExist:
+        return Response({'message': 'No budget found for the current month.'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = MonthlyBudgetSerializer(budget)
+    return Response(serializer.data)
+
+
+@api_view(['POST', 'PUT'])
+@permission_classes([permissions.IsAuthenticated])
+def createOrUpdateBudget(request):
+    data = request.data.copy()
+    print(f"Received data: {data}")
+
+    # Ensure the month ends with '-01' if only 'YYYY-MM' was sent (fallback)
+    if len(data.get('month', '')) == 7:
+        data['month'] += '-01'
+
+    serializer = MonthlyBudgetSerializer(data=data)
+    if serializer.is_valid():
+        budget, created = MonthlyBudget.objects.update_or_create(
+            user=request.user,
+            month=data['month'],
+            defaults={'amount': serializer.validated_data['amount']}
+        )
+        return Response({
+            'message': 'Budget created.' if created else 'Budget updated.',
+            'budget': MonthlyBudgetSerializer(budget).data
+        }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
