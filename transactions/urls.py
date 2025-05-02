@@ -7,4 +7,6 @@ urlpatterns = [
     path('update/<int:id>/', views.updateTransaction, name='updateTransaction'),
     path('delete/<int:id>/', views.deleteTransaction, name='deleteTransaction'),
     path('', views.transactionList, name='transactionList'),
+    path('budgets/new/', views.createOrUpdateBudget, name='createOrUpdateBudget'),
+    path('budgets/', views.getBudget, name='getBudget'),
 ]
