@@ -87,11 +87,13 @@ def transactionList(request):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def getBudget(request):
-    current_month = datetime.now().strftime('%Y-%m-01') 
+    # Get the month from query parameters or use the current month as a default
+    month = request.query_params.get('month', datetime.now().strftime('%Y-%m'))
+
     try:
-        budget = MonthlyBudget.objects.get(user=request.user, month=current_month)
+        budget = MonthlyBudget.objects.get(user=request.user, month=month)
     except MonthlyBudget.DoesNotExist:
-        return Response({'message': 'No budget found for the current month.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'message': f'No budget found for the month {month}.'}, status=status.HTTP_404_NOT_FOUND)
 
     serializer = MonthlyBudgetSerializer(budget)
     return Response(serializer.data)
