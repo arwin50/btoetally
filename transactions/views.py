@@ -91,13 +91,18 @@ def getBudget(request):
     month = request.query_params.get('month', datetime.now().strftime('%Y-%m'))
 
     try:
+        # Try to fetch the budget for the user and the given month
         budget = MonthlyBudget.objects.get(user=request.user, month=month)
     except MonthlyBudget.DoesNotExist:
-        return Response({'message': f'No budget found for the month {month}.'}, status=status.HTTP_404_NOT_FOUND)
+        # If no budget is found for the month, create a new budget with amount 0
+        budget = MonthlyBudget(user=request.user, month=month, amount=0)
+        budget.save()  # Save the new budget to the database
 
+    # Serialize the budget data
     serializer = MonthlyBudgetSerializer(budget)
-    return Response(serializer.data)
 
+    # Return the serialized data in the response
+    return Response(serializer.data)
 
 @api_view(['POST', 'PUT'])
 @permission_classes([permissions.IsAuthenticated])
