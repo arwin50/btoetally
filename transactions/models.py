@@ -13,7 +13,6 @@ class Transaction(models.Model):
         ('Transportation', 'Transportation'),
         ('Entertainment', 'Entertainment'),
         ('Utilities', 'Utilities'),
-        ('Salary', 'Salary'),
         ('Other', 'Other'),
     ]
 
