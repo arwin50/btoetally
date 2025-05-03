@@ -1,4 +1,3 @@
-from django.http import JsonResponse
 from datetime import datetime
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -68,11 +67,17 @@ def transactionList(request):
 
     if category_filter != "All":
         transactions = transactions.filter(category=category_filter)
-    
-    if month_filter == 'Current':
-        current_month = datetime.now().month
-        transactions = transactions.filter(date__month=current_month)
-    
+
+    if month_filter != "All":
+        try:
+            # Expecting month_filter like '2024-04'
+            parsed_date = datetime.strptime(month_filter, "%Y-%m")
+            transactions = transactions.filter(
+                date__year=parsed_date.year,
+                date__month=parsed_date.month
+            )
+        except ValueError:
+            pass  # Invalid format, ignore filtering
 
     serializer = TransactionSerializer(transactions, many=True)
     return Response(serializer.data)
@@ -116,3 +121,9 @@ def createOrUpdateBudget(request):
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def budgetList(request):
+    budgets = MonthlyBudget.objects.filter(user=request.user).order_by('month').values_list('month', flat=True)
+    available_months = sorted(set(budget.strftime('%Y-%m') for budget in budgets))
+    return Response(available_months)
