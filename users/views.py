@@ -7,7 +7,7 @@ from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework import status
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status,permissions
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -52,6 +52,7 @@ def login_view(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
 def logout_view(request):
     try:
         refresh_token = request.data.get("refresh")
