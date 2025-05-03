@@ -10,8 +10,23 @@ from .serializers import MonthlyBudgetSerializer, TransactionSerializer
 def createTransaction(request):
     serializer = TransactionSerializer(data=request.data)
     if serializer.is_valid():
+        transaction_date = serializer.validated_data.get('date')
+        transaction_month = transaction_date.strftime('%Y-%m')
+
+        budget_date = f"{transaction_month}-01"
+        budget, created = MonthlyBudget.objects.get_or_create(
+            user=request.user,
+            month=budget_date,
+            defaults={'amount': 0}
+        )
+
         serializer.save(user=request.user)
-        return Response({'message': 'Transaction created successfully!', 'id': serializer.data['id']}, status=status.HTTP_201_CREATED)
+
+        return Response(
+            {'message': 'Transaction created successfully!', 'id': serializer.data['id']},
+            status=status.HTTP_201_CREATED
+        )
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -56,12 +71,17 @@ def getTransaction(request, id):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def transactionList(request):
-    type_filter = request.GET.get('type','All')
-    category_filter = request.GET.get('category','All')
+    type_filter = request.GET.get('type', 'All')
+    category_filter = request.GET.get('category', 'All')
     month_filter = request.GET.get('month', 'All')
 
     transactions = Transaction.objects.filter(user=request.user)
 
+    # Gather all months before filtering for availableMonths
+    all_dates = transactions.values_list('date', flat=True)
+    available_months = sorted(set(date.strftime('%Y-%m') for date in all_dates))
+
+    # Apply filters
     if type_filter != "All":
         transactions = transactions.filter(type=type_filter)
 
@@ -70,7 +90,6 @@ def transactionList(request):
 
     if month_filter != "All":
         try:
-            # Expecting month_filter like '2024-04'
             parsed_date = datetime.strptime(month_filter, "%Y-%m")
             transactions = transactions.filter(
                 date__year=parsed_date.year,
@@ -80,7 +99,11 @@ def transactionList(request):
             pass  # Invalid format, ignore filtering
 
     serializer = TransactionSerializer(transactions, many=True)
-    return Response(serializer.data)
+    return Response({
+        "transactions": serializer.data,
+        "available_months": available_months,
+    })
+
 
 # views.py (continued)
 
