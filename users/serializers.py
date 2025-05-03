@@ -12,10 +12,14 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirmation = serializers.CharField(write_only=True, min_length=8)
 
-    
     class Meta:
         model = User
         fields = ["id", "username", "email", "password", "password_confirmation"]
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return value
 
     def validate(self, data):
         if data["password"] != data["password_confirmation"]:
@@ -23,7 +27,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        validated_data.pop("password_confirmation")  # Remove password_confirmation since it's not in the model
+        validated_data.pop("password_confirmation")
         user = User.objects.create_user(
             email=validated_data["email"],
             username=validated_data["username"],
